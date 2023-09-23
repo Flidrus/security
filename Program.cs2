@@ -1,0 +1,40 @@
+﻿using System;
+using System.Security.Cryptography;
+
+namespace RandomSequence
+{
+    class Program
+    {
+        const int LENGTH = 100000;
+
+        static void Main(string[] args)
+        {
+            RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
+
+            for (int i = 0; i < 3; i++)
+            {
+                RunTest(provider);
+            }
+
+            Console.WriteLine("Натисніть Enter для виходу");
+            Console.ReadLine();
+        }
+
+        static void RunTest(RNGCryptoServiceProvider provider)
+        {
+            int[] sequence = new int[LENGTH];
+
+            Console.Write($"Послідовність {DateTime.Now}: ");
+
+            for (int i = 0; i < 10; i++)
+            {
+                byte[] randomBytes = new byte[sizeof(int)];
+                provider.GetBytes(randomBytes);
+                sequence[i] = BitConverter.ToInt32(randomBytes, 0);
+                Console.Write(sequence[i] + " ");
+            }
+
+            Console.WriteLine();
+        }
+    }
+}
