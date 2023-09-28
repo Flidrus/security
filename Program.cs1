@@ -20,7 +20,7 @@ class Program
     {
         for (int i = 0; i < count; i++)
         {
-            int random1 = random.Next(10, 20);
+            int random1 = random.Next(10, 30);
 
             Console.WriteLine(random1);
         }
