@@ -1,0 +1,54 @@
+﻿using System;
+using System.Security.Cryptography;
+using System.Text;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Ваш текст или данные для хеширования
+        string data1 = "Hello, world!";
+        string data2 = "Hello, world";
+
+        // Вычислите хеш-коды для данных с использованием разных алгоритмов
+        string md5Hash1 = CalculateHash(data1, HashAlgorithmName.MD5);
+        string md5Hash2 = CalculateHash(data2, HashAlgorithmName.MD5);
+
+        string sha256Hash1 = CalculateHash(data1, HashAlgorithmName.SHA256);
+        string sha256Hash2 = CalculateHash(data2, HashAlgorithmName.SHA256);
+
+        // Выведите хеш-коды на консоль
+        Console.WriteLine("MD5 Hash 1: " + md5Hash1);
+        Console.WriteLine("MD5 Hash 2: " + md5Hash2);
+        Console.WriteLine("SHA256 Hash 1: " + sha256Hash1);
+        Console.WriteLine("SHA256 Hash 2: " + sha256Hash2);
+
+        // Сравните хеш-коды
+        bool md5Equal = md5Hash1 == md5Hash2;
+        bool sha256Equal = sha256Hash1 == sha256Hash2;
+
+        Console.WriteLine("MD5 Hashes are equal: " + md5Equal);
+        Console.WriteLine("SHA256 Hashes are equal: " + sha256Equal);
+
+        Console.ReadKey();
+    }
+
+    static string CalculateHash(string data, HashAlgorithmName algorithm)
+    {
+        using (var hasher = HashAlgorithm.Create(algorithm.Name))
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(data);
+            byte[] hashBytes = hasher.ComputeHash(bytes);
+
+            StringBuilder builder = new StringBuilder();
+            foreach (byte b in hashBytes)
+            {
+                builder.Append(b.ToString("x2"));
+            }
+
+            return builder.ToString();
+        }
+    }
+}
+
+
