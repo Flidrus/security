@@ -1,40 +1,23 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Security.Cryptography;
-using System.Text;
 
 class Program
 {
     static void Main(string[] args)
     {
-        Console.Write("Enter a password: ");
+        Console.Write("Enter password: ");
         string password = Console.ReadLine();
-
-        // Генерация случайной соли
         byte[] salt = GenerateSalt();
 
-        // Хеширование пароля с солью
-        byte[] hash = ComputeHash(password, salt);
+        int[] iterationsList = { 60000, 70000, 80000, 90000, 100000 };
 
-        Console.WriteLine($"Salt: {Convert.ToBase64String(salt)}");
-        Console.WriteLine($"Hash: {Convert.ToBase64String(hash)}");
-
-        Console.Write("Enter the password again: ");
-        string newPassword = Console.ReadLine();
-
-        // Проверка введенного пароля на соответствие сохраненному хешу
-        bool passwordMatches = VerifyPassword(newPassword, salt, hash);
-
-        if (passwordMatches)
+        foreach (int iterations in iterationsList)
         {
-            Console.WriteLine("Password is correct!");
-        }
-        else
-        {
-            Console.WriteLine("Password is incorrect.");
+            HashWithIterations(password, salt, iterations);
         }
     }
 
-    // Генерация случайной соли
     static byte[] GenerateSalt()
     {
         byte[] salt = new byte[16];
@@ -45,35 +28,19 @@ class Program
         return salt;
     }
 
-    // Хеширование пароля с солью
-    static byte[] ComputeHash(string password, byte[] salt)
+    static void HashWithIterations(string password, byte[] salt, int iterations)
     {
-        using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000, HashAlgorithmName.SHA256))
+        var sw = new Stopwatch();
+        sw.Start();
+
+        using (Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations))
         {
-            return pbkdf2.GetBytes(32); // 32 байта - длина хеша
-        }
-    }
-
-    // Проверка введенного пароля на соответствие сохраненному хешу
-    static bool VerifyPassword(string newPassword, byte[] salt, byte[] savedHash)
-    {
-        byte[] newHash = ComputeHash(newPassword, salt);
-        return AreHashesEqual(newHash, savedHash);
-    }
-
-    // Проверка равенства двух хешей
-    static bool AreHashesEqual(byte[] hash1, byte[] hash2)
-    {
-        if (hash1.Length != hash2.Length)
-            return false;
-
-        for (int i = 0; i < hash1.Length; i++)
-        {
-            if (hash1[i] != hash2[i])
-                return false;
+            byte[] hash = pbkdf2.GetBytes(32); // 32 байта - длина хеша
+            // Здесь вы можете сохранить хеш в базе данных или в другом месте для будущей проверки
         }
 
-        return true;
+        sw.Stop();
+        Console.WriteLine($"Iterations: {iterations}, Elapsed time: {sw.ElapsedMilliseconds}ms");
     }
 }
 
