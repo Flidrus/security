@@ -9,7 +9,8 @@ namespace Lz2_3
         static void Main(string[] args)
         {
             Console.Write("Введите путь до зашифрованного файла: ");
-            string path = C:\Users\gomel\source\repos
+            string path =  @"""C:\Users\gomel\source\repos\encfile.dat""";
+
 
             byte[] encryptedFile = File.ReadAllBytes(path);
 
