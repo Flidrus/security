@@ -9,7 +9,7 @@ namespace Lz2_3
         static void Main(string[] args)
         {
             Console.Write("Введите путь до зашифрованного файла: ");
-            string path = Console.ReadLine();
+            string path = C:\Users\gomel\source\repos
 
             byte[] encryptedFile = File.ReadAllBytes(path);
 
