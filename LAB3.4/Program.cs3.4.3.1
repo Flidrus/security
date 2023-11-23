@@ -1,60 +1,45 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 
 class Program
 {
-    static void Main(string[] args)
+    static string CalculateHash(string message)
     {
-        // Задайте ваш секретный ключ
-        string secretKey = "mySecretKey";
-
-        // Введите сообщение, которое вы хотите аутентифицировать
-        Console.Write("Введите сообщение: ");
-        string message = Console.ReadLine();
-
-        // Вычислите хеш-код аутентификации сообщения
-        string authHash = CalculateAuthHash(message, secretKey);
-
-        Console.WriteLine("Хеш-код аутентификации: " + authHash);
-
-        // Проверьте аутентичность сообщения
-        Console.Write("Введите полученный хеш-код аутентификации: ");
-        string receivedAuthHash = Console.ReadLine();
-
-        bool isAuthentic = VerifyMessage(message, receivedAuthHash, secretKey);
-
-        if (isAuthentic)
+        using (var sha256 = SHA256.Create())
         {
-            Console.WriteLine("Сообщение аутентичное.");
+            byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(message));
+            return BitConverter.ToString(hashedBytes).Replace("-", "");
+        }
+    }
+
+    static bool VerifyHash(string message, string hashToCompare)
+    {
+        string generatedHash = CalculateHash(message);
+        return string.Equals(generatedHash, hashToCompare, StringComparison.OrdinalIgnoreCase);
+    }
+
+    static void Main()
+    {
+        string message = "This is a secret message."; // Повідомлення для хешування
+
+        string hashedMessage = CalculateHash(message);
+        Console.WriteLine($"Hash of the message: {hashedMessage}");
+
+        // Перевірка автентичності повідомлення
+        string hashToCompare = hashedMessage; // Хеш, який потрібно порівняти
+        bool isVerified = VerifyHash(message, hashToCompare);
+
+        if (isVerified)
+        {
+            Console.WriteLine("Message is authentic.");
         }
         else
         {
-            Console.WriteLine("Сообщение не аутентичное.");
+            Console.WriteLine("Message verification failed. The message may have been tampered with.");
         }
-
-        Console.ReadKey();
-    }
-
-    // Функция для вычисления хеш-кода аутентификации сообщения
-    static string CalculateAuthHash(string message, string secretKey)
-    {
-        using (HMACSHA256 hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))
-        {
-            byte[] data = Encoding.UTF8.GetBytes(message);
-            byte[] hashBytes = hmac.ComputeHash(data);
-
-            return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-        }
-    }
-
-    // Функция для проверки аутентичности сообщения
-    static bool VerifyMessage(string message, string receivedAuthHash, string secretKey)
-    {
-        string calculatedAuthHash = CalculateAuthHash(message, secretKey);
-
-        return calculatedAuthHash.Equals(receivedAuthHash, StringComparison.OrdinalIgnoreCase);
     }
 }
+
 
 
