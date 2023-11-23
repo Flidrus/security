@@ -1,76 +1,71 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace Lz5_2
+namespace MyPBKDF2
 {
-    static internal class PBKDF2
+    public class PBKDF2Hasher
     {
-        static int outputlength;
-        static HashAlgorithmName hashtype;
-        static byte[] password;
-        static byte[] salt;
-        static byte[] hash;
+        private byte[] _passwordBytes;
+        private byte[] _saltBytes;
+        private byte[] _hashBytes;
+        private int _outputLength;
+        private HashAlgorithmName _hashAlgorithm;
 
-        static public string Password {
-            set { password = Encoding.UTF8.GetBytes(value); } 
-        }
-        static public void GenerateSalt() 
+        public void SetPassword(string password)
         {
-            salt = RandomNumberGenerator.GetBytes(32);
+            _passwordBytes = Encoding.UTF8.GetBytes(password);
         }
-        //hashing
-        static public void HashData(int iterations)
+
+        public void GenerateSalt()
         {
-            using (var rfc = new Rfc2898DeriveBytes(password, salt, iterations, hashtype))
+            _saltBytes = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
             {
-                hash = rfc.GetBytes(outputlength);
+                rng.GetBytes(_saltBytes);
             }
         }
-        //initialize setting hash algorithm type
-        static public void SetHashType()
+
+        public void SetHashAlgorithm(string algorithm)
         {
-            Console.WriteLine("\nChoose hashing algorithm:\n" +
-                "1. SHA1\n" +
-                "2. SHA256\n" +
-                "3. SHA384\n" +
-                "4. SHA512");
-            char a = Console.ReadKey().KeyChar;
-            Console.WriteLine();
-            switch (a)
+            switch (algorithm.ToLower())
             {
-                case '1':
-                    hashtype = HashAlgorithmName.SHA1;
-                    outputlength = 20;
+                case "sha1":
+                    _hashAlgorithm = HashAlgorithmName.SHA1;
+                    _outputLength = 20;
                     break;
-                case '2':
-                    hashtype = HashAlgorithmName.SHA256;
-                    outputlength = 32;
+                case "sha256":
+                    _hashAlgorithm = HashAlgorithmName.SHA256;
+                    _outputLength = 32;
                     break;
-                case '3':
-                    hashtype = HashAlgorithmName.SHA384;
-                    outputlength = 48;
+                case "sha384":
+                    _hashAlgorithm = HashAlgorithmName.SHA384;
+                    _outputLength = 48;
                     break;
-                case '4':
-                    hashtype = HashAlgorithmName.SHA512;
-                    outputlength = 64;
+                case "sha512":
+                    _hashAlgorithm = HashAlgorithmName.SHA512;
+                    _outputLength = 64;
                     break;
                 default:
-                    hashtype = HashAlgorithmName.SHA1;
-                    outputlength = 20;
-                    Console.WriteLine("\nUnrecognized command! Using SHA1\n");
+                    _hashAlgorithm = HashAlgorithmName.SHA256;
+                    _outputLength = 32;
                     break;
             }
         }
-        //print all data to console
-        static public void PrintData()
+
+        public void HashData(int iterations)
         {
-            Console.WriteLine($"Password: {Encoding.UTF8.GetString(password)}\n" +
-                $"Hash: {Convert.ToBase64String(hash)}\n" +
-                $"Salt: {Convert.ToBase64String(salt)}");
+            using (var rfc = new Rfc2898DeriveBytes(_passwordBytes, _saltBytes, iterations, _hashAlgorithm))
+            {
+                _hashBytes = rfc.GetBytes(_outputLength);
+            }
+        }
+
+        public void PrintData()
+        {
+            Console.WriteLine($"Password: {Encoding.UTF8.GetString(_passwordBytes)}\n" +
+                $"Hash: {Convert.ToBase64String(_hashBytes)}\n" +
+                $"Salt: {Convert.ToBase64String(_saltBytes)}");
         }
     }
+}
