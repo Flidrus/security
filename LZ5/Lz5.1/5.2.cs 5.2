@@ -1,0 +1,36 @@
+using System;
+
+namespace MyPBKDF2App
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {   
+            Console.Write("Enter password: ");
+            MyPBKDF2.PBKDF2.Password = Console.ReadLine();
+            MyPBKDF2.PBKDF2.GenerateSalt();
+            MyPBKDF2.PBKDF2.SetHashType();
+            int iterations = 10000;
+
+            for (int i = 0; i < 10; i++)
+            {
+                HashWithCounter(iterations);
+                iterations += 50000;
+            }
+        }
+
+        static void HashWithCounter(int iterations)
+        {
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            MyPBKDF2.PBKDF2.HashData(iterations);
+
+            sw.Stop();
+            MyPBKDF2.PBKDF2.PrintData();
+            Console.WriteLine($"Iterations: {iterations}, Elapsed time: {sw.ElapsedMilliseconds}ms\n");
+        }
+    }
+}
+
+
