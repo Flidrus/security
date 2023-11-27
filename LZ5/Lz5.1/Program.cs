@@ -1,46 +1,152 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Collections;
 using System.Security.Cryptography;
+using System.Text;
 
-class Program
+namespace LAB5_3
 {
-    static void Main(string[] args)
+    internal class Program
     {
-        Console.Write("Enter password: ");
-        string password = Console.ReadLine();
-        byte[] salt = GenerateSalt();
-
-        int[] iterationsList = { 60000, 70000, 80000, 90000, 100000 };
-
-        foreach (int iterations in iterationsList)
+        static void Main()
         {
-            HashWithIterations(password, salt, iterations);
+            UserList userList = new UserList(); // Список користувачів
+            User currentUser = null; // Поточний користувач
+
+            while (true)
+            {
+                Console.WriteLine("Available commands:");
+                Console.WriteLine("s - Sign up");
+                Console.WriteLine("l - Log in");
+                Console.WriteLine("e - Log out");
+                Console.WriteLine("Please, choose the necessary command:");
+                string input = Console.ReadLine();
+
+                switch (input.ToLower())
+                {
+                    case "s":
+                        User newUser = SignUp(userList);
+                        userList.Add(newUser);
+                        break;
+                    case "l":
+                        currentUser = LogIn(userList);
+                        break;
+                    case "e":
+                        currentUser = LogOut(currentUser);
+                        break;
+                }
+            }
+        }
+
+        static User SignUp(UserList userList)
+        {
+            Console.Clear();
+            Console.WriteLine("Signing up");
+            Console.WriteLine("Please, enter your login:");
+            string login = Console.ReadLine();
+            Console.WriteLine("Please, enter your password:");
+            string password = Console.ReadLine();
+            User newUser = new User(login, password);
+            Console.WriteLine("Success! You've been signed up.");
+            return newUser;
+        }
+
+        static User LogIn(UserList userList)
+        {
+            Console.WriteLine("Please, enter your login:");
+            string login = Console.ReadLine();
+            Console.WriteLine("Please, enter your password:");
+            string password = Console.ReadLine();
+
+            User user = userList.GetUser(login);
+            if (user != null && user.ValidatePassword(password))
+            {
+                Console.WriteLine("Success! Logged in as " + user.Login);
+                return user;
+            }
+            else
+            {
+                Console.WriteLine("Invalid login or password!");
+                return null;
+            }
+        }
+
+        static User LogOut(User currentUser)
+        {
+            if (currentUser != null)
+            {
+                Console.WriteLine("Logging out " + currentUser.Login);
+            }
+            else
+            {
+                Console.WriteLine("No user is currently logged in.");
+            }
+            return null;
         }
     }
 
-    static byte[] GenerateSalt()
+    public class User
     {
-        byte[] salt = new byte[16];
-        using (var rng = new RNGCryptoServiceProvider())
+        public string Login { get; }
+        private byte[] SaltedHashPassword { get; }
+
+        public User(string login, string password)
         {
-            rng.GetBytes(salt);
+            Login = login;
+            byte[] salt = PBKDF2.GenerateSalt();
+            SaltedHashPassword = PBKDF2.HashPassword(Encoding.UTF8.GetBytes(password), salt, 10000);
         }
-        return salt;
+
+        public bool ValidatePassword(string password)
+        {
+            byte[] enteredPassword = PBKDF2.HashPassword(Encoding.UTF8.GetBytes(password), SaltedHashPassword, 10000);
+            return StructuralComparisons.StructuralEqualityComparer.Equals(enteredPassword, SaltedHashPassword);
+        }
     }
 
-    static void HashWithIterations(string password, byte[] salt, int iterations)
+    public class UserList
     {
-        var sw = new Stopwatch();
-        sw.Start();
+        private User[] users = new User[10];
+        private int count = 0;
 
-        using (Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations))
+        public void Add(User user)
         {
-            byte[] hash = pbkdf2.GetBytes(32); // 32 байта - длина хеша
-            // Здесь вы можете сохранить хеш в базе данных или в другом месте для будущей проверки
+            users[count++] = user;
         }
 
-        sw.Stop();
-        Console.WriteLine($"Iterations: {iterations}, Elapsed time: {sw.ElapsedMilliseconds}ms");
+        public User GetUser(string login)
+        {
+            foreach (User user in users)
+            {
+                if (user != null && user.Login == login)
+                {
+                    return user;
+                }
+            }
+            return null;
+        }
+    }
+
+    public class PBKDF2
+    {
+        public static byte[] GenerateSalt()
+        {
+            using (var randomNumberGenerator = new RNGCryptoServiceProvider())
+            {
+                var randomNumber = new byte[32];
+                randomNumberGenerator.GetBytes(randomNumber);
+                return randomNumber;
+            }
+        }
+
+        public static byte[] HashPassword(byte[] toBeHashed, byte[] salt, int numberOfRounds)
+        {
+            using (var rfc2898 = new Rfc2898DeriveBytes(toBeHashed, salt, numberOfRounds))
+            {
+                return rfc2898.GetBytes(20);
+            }
+        }
     }
 }
+
+
 
