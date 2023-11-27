@@ -1,42 +1,59 @@
 using System;
+using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
 
-class Program
+namespace Lz3_4_3
 {
-    static string CalculateHash(string message)
+    class Program
     {
-        using (var sha256 = SHA256.Create())
+        static byte[] GenerateRandomKey()
         {
-            byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(message));
-            return BitConverter.ToString(hashedBytes).Replace("-", "");
+            byte[] key = new byte[32];
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                rng.GetBytes(key);
+            }
+            return key;
         }
-    }
 
-    static bool VerifyHash(string message, string hashToCompare)
-    {
-        string generatedHash = CalculateHash(message);
-        return string.Equals(generatedHash, hashToCompare, StringComparison.OrdinalIgnoreCase);
-    }
-
-    static void Main()
-    {
-        string message = "This is a secret message."; // Повідомлення для хешування
-
-        string hashedMessage = CalculateHash(message);
-        Console.WriteLine($"Hash of the message: {hashedMessage}");
-
-        // Перевірка автентичності повідомлення
-        string hashToCompare = hashedMessage; // Хеш, який потрібно порівняти
-        bool isVerified = VerifyHash(message, hashToCompare);
-
-        if (isVerified)
+        static byte[] CalculateHMAC(string message, byte[] key)
         {
-            Console.WriteLine("Message is authentic.");
+            using (var hmac = new HMACSHA256(key))
+            {
+                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+                return hmac.ComputeHash(messageBytes);
+            }
         }
-        else
+
+        static bool VerifyHMAC(string message, byte[] storedHMAC, byte[] key)
         {
-            Console.WriteLine("Message verification failed. The message may have been tampered with.");
+            byte[] computedHMAC = CalculateHMAC(message, key);
+            return StructuralComparisons.StructuralEqualityComparer.Equals(computedHMAC, storedHMAC);
+        }
+
+        static void Main()
+        {
+            string secretMessage = "This is a secret message.";
+
+            // Генерування випадкового ключа для HMAC
+            byte[] key = GenerateRandomKey();
+
+            // Розрахунок HMAC для секретного повідомлення
+            byte[] hmac = CalculateHMAC(secretMessage, key);
+            Console.WriteLine($"HMAC of the secret message: {BitConverter.ToString(hmac).Replace("-", "")}");
+
+            // Перевірка автентичності повідомлення за допомогою HMAC
+            bool isVerified = VerifyHMAC(secretMessage, hmac, key);
+
+            if (isVerified)
+            {
+                Console.WriteLine("Message is authentic.");
+            }
+            else
+            {
+                Console.WriteLine("Message verification failed. The message may have been tampered with.");
+            }
         }
     }
 }
