@@ -1,36 +1,61 @@
 using System;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace MyPBKDF2App
+namespace LAB5_1
 {
-    internal class Program
+    class Program
     {
-        static void Main(string[] args)
-        {   
-            Console.Write("Enter password: ");
-            MyPBKDF2.PBKDF2.Password = Console.ReadLine();
-            MyPBKDF2.PBKDF2.GenerateSalt();
-            MyPBKDF2.PBKDF2.SetHashType();
-            int iterations = 10000;
-
-            for (int i = 0; i < 10; i++)
+        static void Main()
+        {
+            while (true)
             {
-                HashWithCounter(iterations);
-                iterations += 50000;
+                Console.WriteLine("Enter password:");
+                string password = Console.ReadLine();
+
+                SaltedHash hashedPassword = new SaltedHash(password);
+
+                Console.WriteLine("Salt: " + hashedPassword.GetSalt());
+                Console.WriteLine("Salted Hash: " + hashedPassword.GetSaltedHash());
+            }
+        }
+    }
+
+    class SaltedHash
+    {
+        private byte[] Salt { get; }
+        private string SaltedHashValue { get; }
+
+        public SaltedHash(string password)
+        {
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                Salt = new byte[32];
+                rng.GetBytes(Salt);
+            }
+
+            byte[] passwordBytes = Encoding.Unicode.GetBytes(password);
+            byte[] saltedPassword = new byte[Salt.Length + passwordBytes.Length];
+
+            Buffer.BlockCopy(Salt, 0, saltedPassword, 0, Salt.Length);
+            Buffer.BlockCopy(passwordBytes, 0, saltedPassword, Salt.Length, passwordBytes.Length);
+
+            using (var sha256 = SHA256.Create())
+            {
+                byte[] hash = sha256.ComputeHash(saltedPassword);
+                SaltedHashValue = Convert.ToBase64String(hash);
             }
         }
 
-        static void HashWithCounter(int iterations)
+        public string GetSaltedHash()
         {
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
+            return SaltedHashValue;
+        }
 
-            MyPBKDF2.PBKDF2.HashData(iterations);
-
-            sw.Stop();
-            MyPBKDF2.PBKDF2.PrintData();
-            Console.WriteLine($"Iterations: {iterations}, Elapsed time: {sw.ElapsedMilliseconds}ms\n");
+        public string GetSalt()
+        {
+            return Convert.ToBase64String(Salt);
         }
     }
 }
-
 
