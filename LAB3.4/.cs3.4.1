@@ -1,54 +1,34 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 
+namespace Lz3_4_1
+{ 
+
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Ваш текст или данные для хеширования
-        string data1 = "Hello, world!";
-        string data2 = "Hello, world";
+        string data = "Hello, world!"; // Ваші дані для хешування
 
-        // Вычислите хеш-коды для данных с использованием разных алгоритмов
-        string md5Hash1 = CalculateHash(data1, HashAlgorithmName.MD5);
-        string md5Hash2 = CalculateHash(data2, HashAlgorithmName.MD5);
+        Console.WriteLine("Data: " + data);
+        Console.WriteLine();
 
-        string sha256Hash1 = CalculateHash(data1, HashAlgorithmName.SHA256);
-        string sha256Hash2 = CalculateHash(data2, HashAlgorithmName.SHA256);
-
-        // Выведите хеш-коды на консоль
-        Console.WriteLine("MD5 Hash 1: " + md5Hash1);
-        Console.WriteLine("MD5 Hash 2: " + md5Hash2);
-        Console.WriteLine("SHA256 Hash 1: " + sha256Hash1);
-        Console.WriteLine("SHA256 Hash 2: " + sha256Hash2);
-
-        // Сравните хеш-коды
-        bool md5Equal = md5Hash1 == md5Hash2;
-        bool sha256Equal = sha256Hash1 == sha256Hash2;
-
-        Console.WriteLine("MD5 Hashes are equal: " + md5Equal);
-        Console.WriteLine("SHA256 Hashes are equal: " + sha256Equal);
-
-        Console.ReadKey();
-    }
-
-    static string CalculateHash(string data, HashAlgorithmName algorithm)
-    {
-        using (var hasher = HashAlgorithm.Create(algorithm.Name))
+        // Вибір різних алгоритмів хешування
+        HashAlgorithm[] algorithms = new HashAlgorithm[]
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(data);
-            byte[] hashBytes = hasher.ComputeHash(bytes);
+            MD5.Create(),
+            SHA1.Create(),
+            SHA256.Create(),
+            SHA384.Create(),
+            SHA512.Create()
+        };
 
-            StringBuilder builder = new StringBuilder();
-            foreach (byte b in hashBytes)
-            {
-                builder.Append(b.ToString("x2"));
-            }
-
-            return builder.ToString();
+        foreach (HashAlgorithm algorithm in algorithms)
+        {
+            byte[] hash = algorithm.ComputeHash(Encoding.UTF8.GetBytes(data));
+            Console.WriteLine($"{algorithm.GetType().Name}: {BitConverter.ToString(hash)} (Length: {hash.Length})");
         }
-    }
+      }
+   }
 }
-
-
