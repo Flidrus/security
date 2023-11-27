@@ -2,70 +2,40 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MyPBKDF2
+namespace LAB5_2
 {
-    public class PBKDF2Hasher
+    internal class Program
     {
-        private byte[] _passwordBytes;
-        private byte[] _saltBytes;
-        private byte[] _hashBytes;
-        private int _outputLength;
-        private HashAlgorithmName _hashAlgorithm;
-
-        public void SetPassword(string password)
+        static void Main()
         {
-            _passwordBytes = Encoding.UTF8.GetBytes(password);
-        }
+            Console.WriteLine("Enter password:");
+            string password = Console.ReadLine();
 
-        public void GenerateSalt()
-        {
-            _saltBytes = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
+            for (int i = 1; i <= 10; i++)
             {
-                rng.GetBytes(_saltBytes);
+                int iterations = i * 50000;
+                string hashedPassword = HashPassword(password, iterations);
+                Console.WriteLine($"Iterations: {iterations}, Hashed Password: {hashedPassword}");
             }
+
+            Console.ReadLine();
         }
 
-        public void SetHashAlgorithm(string algorithm)
+        public static string HashPassword(string password, int iterations)
         {
-            switch (algorithm.ToLower())
+            byte[] salt;
+            new RNGCryptoServiceProvider().GetBytes(salt = new byte[16]);
+
+            using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256))
             {
-                case "sha1":
-                    _hashAlgorithm = HashAlgorithmName.SHA1;
-                    _outputLength = 20;
-                    break;
-                case "sha256":
-                    _hashAlgorithm = HashAlgorithmName.SHA256;
-                    _outputLength = 32;
-                    break;
-                case "sha384":
-                    _hashAlgorithm = HashAlgorithmName.SHA384;
-                    _outputLength = 48;
-                    break;
-                case "sha512":
-                    _hashAlgorithm = HashAlgorithmName.SHA512;
-                    _outputLength = 64;
-                    break;
-                default:
-                    _hashAlgorithm = HashAlgorithmName.SHA256;
-                    _outputLength = 32;
-                    break;
-            }
-        }
+                byte[] hash = pbkdf2.GetBytes(20); // 20 bytes for SHA256
+                byte[] hashWithSalt = new byte[36]; // 16 bytes salt + 20 bytes hash
 
-        public void HashData(int iterations)
-        {
-            using (var rfc = new Rfc2898DeriveBytes(_passwordBytes, _saltBytes, iterations, _hashAlgorithm))
-            {
-                _hashBytes = rfc.GetBytes(_outputLength);
-            }
-        }
+                Array.Copy(salt, 0, hashWithSalt, 0, 16);
+                Array.Copy(hash, 0, hashWithSalt, 16, 20);
 
-        public void PrintData()
-        {
-            Console.WriteLine($"Password: {Encoding.UTF8.GetString(_passwordBytes)}\n" +
-                $"Hash: {Convert.ToBase64String(_hashBytes)}\n" +
-                $"Salt: {Convert.ToBase64String(_saltBytes)}");
+                return Convert.ToBase64String(hashWithSalt);
+            }
         }
     }
 }
