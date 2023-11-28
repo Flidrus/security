@@ -13,7 +13,7 @@ namespace LAB5_2
 
             for (int i = 1; i <= 10; i++)
             {
-                int iterations = i * 50000;
+                int iterations = 5 * 10000;
                 string hashedPassword = HashPassword(password, iterations);
                 Console.WriteLine($"Iterations: {iterations}, Hashed Password: {hashedPassword}");
             }
