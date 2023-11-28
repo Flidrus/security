@@ -1,32 +1,98 @@
-﻿using System;
+using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
-class Program
+namespace 6_1
 {
-    static void Main()
+    class Program
     {
-
-        Console.WriteLine("Генерація псевдовипадкових чисел!");
-        Random random1 = new Random();
-        Console.WriteLine("Будь-ласка, введіть кількість чисел, яку ви хочете отримати!!!");
-        int count1 = Convert.ToInt32(Console.ReadLine());
-
-
-        Console.WriteLine("Набір псевдовипадкових чисел");
-        RandomGenerateCrypto(random1, count1);
-
-    }
-
-    static void RandomGenerateCrypto(Random random, int count)
-    {
-        for (int i = 0; i < count; i++)
+        static void Main(string[] args)
         {
-            int random1 = random.Next(10, 30);
+            SymmetricAlgorithm desCipher = new DESCryptoServiceProvider();
+            SymmetricAlgorithm tripleDesCipher = new TripleDESCryptoServiceProvider();
+            SymmetricAlgorithm aesCipher = new AesCryptoServiceProvider();
 
-            Console.WriteLine(random1);
+            byte[] desKey = GenerateRandomNumber(8);
+            byte[] tripleDesKey = GenerateRandomNumber(16);
+            byte[] aesKey = GenerateRandomNumber(32);
+
+            desCipher.Key = desKey;
+            tripleDesCipher.Key = tripleDesKey;
+            aesCipher.Key = aesKey;
+
+            while (true)
+            {
+                Console.WriteLine("Please, enter data to encrypt / decrypt:");
+                string data = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(data))
+                    break;
+
+                var desIV = GenerateRandomNumber(8);
+                var tripleDesIV = GenerateRandomNumber(8);
+                var aesIV = GenerateRandomNumber(16);
+
+                var des_encrypted = EncryptText(data, desKey, desIV, desCipher);
+                var des_decrypted = DecryptText(des_encrypted, desKey, desIV, desCipher);
+
+                var triple_des_encrypted = EncryptText(data, tripleDesKey, tripleDesIV, tripleDesCipher);
+                var triple_des_decrypted = DecryptText(triple_des_encrypted, tripleDesKey, tripleDesIV, tripleDesCipher);
+
+                var aes_encrypted = EncryptText(data, aesKey, aesIV, aesCipher);
+                var aes_decrypted = DecryptText(aes_encrypted, aesKey, aesIV, aesCipher);
+
+                DisplayResults("DES", data, des_encrypted, des_decrypted);
+                DisplayResults("TripleDES", data, triple_des_encrypted, triple_des_decrypted);
+                DisplayResults("AES", data, aes_encrypted, aes_decrypted);
+            }
+        }
+
+        static byte[] GenerateRandomNumber(int length)
+        {
+            using (var randomNumberGenerator = new RNGCryptoServiceProvider())
+            {
+                var randomNumber = new byte[length];
+                randomNumberGenerator.GetBytes(randomNumber);
+                return randomNumber;
+            }
+        }
+
+        static byte[] EncryptText(string plainText, byte[] key, byte[] iv, SymmetricAlgorithm algorithm)
+        {
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                using (CryptoStream cryptoStream = new CryptoStream(memoryStream, algorithm.CreateEncryptor(key, iv), CryptoStreamMode.Write))
+                {
+                    byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+                    cryptoStream.Write(plainBytes, 0, plainBytes.Length);
+                    cryptoStream.FlushFinalBlock();
+                    return memoryStream.ToArray();
+                }
+            }
+        }
+
+        static string DecryptText(byte[] cipherText, byte[] key, byte[] iv, SymmetricAlgorithm algorithm)
+        {
+            using (MemoryStream memoryStream = new MemoryStream(cipherText))
+            {
+                using (CryptoStream cryptoStream = new CryptoStream(memoryStream, algorithm.CreateDecryptor(key, iv), CryptoStreamMode.Read))
+                {
+                    using (StreamReader streamReader = new StreamReader(cryptoStream))
+                    {
+                        return streamReader.ReadToEnd();
+                    }
+                }
+            }
+        }
+
+        static void DisplayResults(string algorithmName, string originalText, byte[] encryptedText, string decryptedText)
+        {
+            Console.WriteLine($"---------------------- {algorithmName} Encryption in .NET ----------------------");
+            Console.WriteLine($"Original Text = {originalText}");
+            Console.WriteLine($"Encrypted Text = {Convert.ToBase64String(encryptedText)}");
+            Console.WriteLine($"Decrypted Text = {decryptedText}");
+            Console.WriteLine($"-------------------------------------------------------------");
         }
     }
-
-
-
-
 }
