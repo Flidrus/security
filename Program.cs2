@@ -1,40 +1,98 @@
-﻿using System;
+using System;
+using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
-namespace RandomSequence
+namespace 6_2
 {
-    class Program
+    internal class Program
     {
-        const int LENGTH = 100000;
-
         static void Main(string[] args)
         {
-            RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
-
-            for (int i = 0; i < 3; i++)
+            Console.WriteLine("Please, enter password");
+            string passwordToHash = Console.ReadLine();
+            int numberOfRounds = 5 * 10000; // Змінена кількість ітерацій
+            AesCipher aesCipher = new AesCipher();
+            byte[] hashedPassword = HashPassword(passwordToHash, numberOfRounds);
+            aesCipher.Key = hashedPassword;
+            while (true)
             {
-                RunTest(provider);
+                Console.WriteLine("Enter data to cipher");
+                string data = Console.ReadLine();
+                byte[] IV = GenerateRandomBytes(16);
+                var aes_encrypted = aesCipher.Encrypt(Encoding.UTF8.GetBytes(data), aesCipher.Key, IV);
+                var aes_decrypted = aesCipher.Decrypt(aes_encrypted, aesCipher.Key, IV);
+                var aes_decryptedMessage = Encoding.UTF8.GetString(aes_decrypted);
+                Console.WriteLine("----------------------");
+                Console.WriteLine("AES Encryption in .NET");
+                Console.WriteLine();
+                Console.WriteLine("Original Text = " + data);
+                Console.WriteLine("Encrypted Text = " +
+                Convert.ToBase64String(aes_encrypted));
+                Console.WriteLine("Decrypted Text = " + aes_decryptedMessage);
+                Console.WriteLine("----------------------");
             }
-
-            Console.WriteLine("Натисніть Enter для виходу");
-            Console.ReadLine();
         }
 
-        static void RunTest(RNGCryptoServiceProvider provider)
+        // Генерує випадкові байти
+        private static byte[] GenerateRandomBytes(int length)
         {
-            int[] sequence = new int[LENGTH];
-
-            Console.Write($"Послідовність {DateTime.Now}: ");
-
-            for (int i = 0; i < 10; i++)
+            using (var randomNumberGenerator = new RNGCryptoServiceProvider())
             {
-                byte[] randomBytes = new byte[sizeof(int)];
-                provider.GetBytes(randomBytes);
-                sequence[i] = BitConverter.ToInt32(randomBytes, 0);
-                Console.Write(sequence[i] + " ");
+                var randomNumber = new byte[length];
+                randomNumberGenerator.GetBytes(randomNumber);
+                return randomNumber;
             }
+        }
 
-            Console.WriteLine();
+        // Код генерації хешу за допомогою PBKDF2
+        private static byte[] HashPassword(string passwordToHash, int numberOfRounds)
+        {
+            byte[] salt = GenerateRandomBytes(32);
+            using (var rfc2898 = new Rfc2898DeriveBytes(passwordToHash, salt, numberOfRounds))
+            {
+                return rfc2898.GetBytes(32);
+            }
+        }
+    }
+
+    // Клас AesCipher з методами шифрування та розшифрування
+    public class AesCipher
+    {
+        public byte[] Key;
+        public byte[] Encrypt(byte[] dataToEncrypt, byte[] key, byte[] iv)
+        {
+            using (var aes = new AesCryptoServiceProvider())
+            {
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+                aes.Key = key;
+                aes.IV = iv;
+                using (var memoryStream = new MemoryStream())
+                {
+                    var cryptoStream = new CryptoStream(memoryStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
+                    cryptoStream.Write(dataToEncrypt, 0, dataToEncrypt.Length);
+                    cryptoStream.FlushFinalBlock();
+                    return memoryStream.ToArray();
+                }
+            }
+        }
+        public byte[] Decrypt(byte[] dataToDecrypt, byte[] key, byte[] iv)
+        {
+            using (var aes = new AesCryptoServiceProvider())
+            {
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+                aes.Key = key;
+                aes.IV = iv;
+                using (var memoryStream = new MemoryStream())
+                {
+                    var cryptoStream = new CryptoStream(memoryStream, aes.CreateDecryptor(), CryptoStreamMode.Write);
+                    cryptoStream.Write(dataToDecrypt, 0, dataToDecrypt.Length);
+                    cryptoStream.FlushFinalBlock();
+                    return memoryStream.ToArray();
+                }
+            }
         }
     }
 }
