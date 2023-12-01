@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordHashing
+namespace 5_2
 {
     internal class Program
     {
         static void Main()
         {
-            Console.WriteLine("Please enter a password:");
-            string passwordToHash = Console.ReadLine();
+            Console.WriteLine("Please input a password:");
+        string passwordToHash = Console.ReadLine();
 
             for (int i = 5 * 10000; i < 5 * 10000 + (10 * 50000); i += 50000)
             {
@@ -52,4 +52,3 @@ namespace PasswordHashing
         }
     }
 }
-
