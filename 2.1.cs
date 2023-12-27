@@ -1,41 +1,65 @@
-﻿using System;
+using System;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 
-namespace lAB2_1
+class FileEncryption
 {
-    class Program
+    static byte[] ReadFile(string filePath)
     {
-        static void Main(string[] args)
+        return File.ReadAllBytes(filePath);
+    }
+
+    static void WriteFile(string filePath, byte[] data)
+    {
+        File.WriteAllBytes(filePath, data);
+    }
+
+    static void EncryptFile(string filePath, string encryptedFilePath)
+    {
+        byte[] data = ReadFile(filePath);
+
+        // Ключ для XOR-шифрування
+        byte[] key = { 0x11, 0x22, 0x33, 0x44 };
+
+        // Виконуємо операцію XOR над кожним байтом у файлі з ключем
+        for (int i = 0; i < data.Length; i++)
         {
-            // Зчитуємо повний шлях до файлу, що потрібно зашифрувати
-            Console.Write("Введіть шлях до файлу: ");
-            string path = Console.ReadLine();
-
-            // Зчитуємо вміст файлу в байтовий масив   
-            byte[] fileBytes = File.ReadAllBytes(path);
-
-            // Шифруємо вміст файлу
-            byte[] encryptedBytes = Encrypt(fileBytes);
-
-            // Витягуємо ім'я файлу з шляху  
-            string filename = Path.GetFileNameWithoutExtension(path);
-
-            // Формуємо шлях до зашифрованого файлу з розширенням .dat
-            string encryptedPath = Path.ChangeExtension(path, "dat");
-
-            // Записуємо зашифрований файл
-            File.WriteAllBytes(encryptedPath, encryptedBytes);
-
-            Console.WriteLine("Файл зашифровано!");
+            data[i] ^= key[i % key.Length];
         }
 
-        // Метод шифрування
-        static byte[] Encrypt(byte[] plainText)
+        // Записуємо зашифровані дані у новий файл
+        WriteFile(encryptedFilePath, data);
+    }
+
+    static void DecryptFile(string encryptedFilePath, string decryptedFilePath)
+    {
+        byte[] data = ReadFile(encryptedFilePath);
+
+        // Ключ для XOR-розшифрування
+        byte[] key = { 0x11, 0x22, 0x33, 0x44 };
+
+        // Виконуємо знову операцію XOR над кожним байтом у файлі з ключем
+        for (int i = 0; i < data.Length; i++)
         {
-            // Шифрування тут за допомогою AES наприклад
-            return plainText;
+            data[i] ^= key[i % key.Length];
         }
+
+        // Записуємо розшифровані дані у новий файл
+        WriteFile(decryptedFilePath, data);
+    }
+
+    static void Main()
+    {
+        string filePath = "C:/Users/gomel/Documents/Course Work HandBook2023.pdf";
+        string encryptedFilePath = filePath + ".encrypted";
+        string decryptedFilePath = filePath.Replace(".pdf", "_decrypted.pdf");
+
+        // Шифруємо файл
+        EncryptFile(filePath, encryptedFilePath);
+
+        // Розшифровуємо файл
+        DecryptFile(encryptedFilePath, decryptedFilePath);
+
+        Console.WriteLine("Файл зашифровано та розшифровано успішно.");
     }
 }
+
